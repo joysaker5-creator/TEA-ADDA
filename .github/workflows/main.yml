@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build TEA ADDA APK
 
 on:
   push:
@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ১. রিপোজিটরি চেকআউট
+      # ১. রিপোজিটরি ক্লোন
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ২. Node.js সেটআপ (লক-ফাইল ক্যাশ ছাড়া)
+      # ২. Node.js সেটআপ
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -28,31 +28,37 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      # ৪. ডিপেনডেন্সি ইনস্টল (লক-ফাইল ছাড়াই কাজ করবে)
-      - name: Install Project Dependencies
-        run: npm install
+      # ৪. ডিপেনডেন্সি ইনস্টলেশন (লেগেসি পিয়ার ডিপেনডেন্সিসহ)
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
 
-      # ৫. ওয়েব অ্যাপ্লিকেশন বিল্ড
-      - name: Build Web Dist
-        run: npm run build
+      # ৫. ফ্রন্টএন্ড অ্যাপ বিল্ড (APK-র জন্য dist ফোল্ডার তৈরি)
+      - name: Build Web Frontend
+        run: npx vite build
 
-      # ৬. ক্যাপাসিটর ও অ্যান্ড্রয়েড কনফিগারেশন
-      - name: Setup Capacitor & Android Platform
+      # ৬. ক্যাপাসিটর অ্যান্ড্রয়েড প্ল্যাটফর্ম কনফিগার
+      - name: Setup Capacitor Android
         run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "TEA ADDA" "com.teaadda.game" --web-dir dist
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest --save-dev
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.teaadda.game",
+            "appName": "TEA ADDA",
+            "webDir": "dist"
+          }
+          EOF
           npx cap add android
           npx cap sync android
 
       # ৭. অ্যান্ড্রয়েড APK কম্পাইল
-      - name: Build Debug APK
+      - name: Build Debug APK with Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --no-daemon
 
-      # ৮. সফলভাবে তৈরি হওয়া APK ফাইল আপলোড (ডাউনলোডের জন্য)
-      - name: Upload Android APK
+      # ৮. ডাউনলোড করার জন্য APK Artifact তৈরি
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: TEA-ADDA-APK
