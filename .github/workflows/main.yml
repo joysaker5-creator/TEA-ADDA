@@ -11,57 +11,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ১. রিপোজিটরি ক্লোন
+      
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ২. ফাইল স্ট্রাকচার চেক ও অটো-ফিক্স (Self Healing)
+      (Self Healing)
       - name: Fix File Paths and Verify Structure
         run: |
-          echo "=== প্রজেক্টের ফাইল তালিকা ==="
+          echo "
           ls -la
           
-          # যদি কোনো নেস্টেড সাব-ফোল্ডারে প্রজেক্ট থাকে তবে তা রুটে আনা
+     
           if [ ! -d "src" ] && [ -d "TEA-ADDA/src" ]; then
-            echo "নেস্টেড ফোল্ডার পাওয়া গেছে, ফাইলগুলো রুটে আনা হচ্ছে..."
+           
             cp -r TEA-ADDA/* .
           fi
 
-          # যদি Main.tsx বড় হাতের অক্ষরে থাকে তবে তা main.tsx করা
+           
           if [ -f "src/Main.tsx" ]; then
             mv src/Main.tsx src/main.tsx
           fi
 
-          # index.html এ পাথ ঠিক করা (/src/main.tsx -> ./src/main.tsx)
+          # index.html  (/src/main.tsx -> ./src/main.tsx)
           if [ -f "index.html" ]; then
             sed -i 's|/src/main.tsx|./src/main.tsx|g' index.html
           fi
 
-          echo "=== src ফোল্ডারের ফাইল তালিকা ==="
-          ls -la src/ || echo "সতর্কতা: src ফোল্ডার সরাসরি রুটে পাওয়া যায়নি!"
+        
 
-      # ৩. আধুনিক Node.js সেটআপ
+     
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # ৪. জাভা JDK 21 সেটআপ
+      
       - name: Setup Java JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # ৫. ডিপেনডেন্সি ইনস্টল
+      
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
-      # ৬. ফ্রন্টএন্ড বিল্ড (dist ফোল্ডার তৈরি)
+      
       - name: Build Web Frontend
         run: npx vite build
 
-      # ৭. ক্যাপাসিটর অ্যান্ড্রয়েড কনফিগারেশন
+     
       - name: Setup Capacitor Android
         run: |
           npm install @capacitor/core@^6.0.0 @capacitor/cli@^6.0.0 @capacitor/android@^6.0.0 --save-dev
@@ -75,14 +74,14 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      # ৮. অ্যান্ড্রয়েড APK কম্পাইল
+    
       - name: Build APK with Gradle
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      # ৯. ডাউনলোড করার জন্য APK ফাইল আপলোড
+ 
       - name: Upload APK File
         uses: actions/upload-artifact@v4
         with:
