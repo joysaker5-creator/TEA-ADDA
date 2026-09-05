@@ -15,52 +15,50 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ২. Node.js সেটআপ
+      # ২. আধুনিক Node.js সেটআপ
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      # ৩. জাভা JDK ১৭ সেটআপ
+      # ৩. জাভা JDK 17 সেটআপ
       - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
 
-      # ৪. ডিপেনডেন্সি ইনস্টলেশন (লেগেসি পিয়ার ডিপেনডেন্সিসহ)
-      - name: Install Dependencies
-        run: npm install --legacy-peer-deps
+      # ৪. অ্যান্ড্রয়েড এসডিকে টুলস সেটআপ
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      # ৫. ফ্রন্টএন্ড অ্যাপ বিল্ড (APK-র জন্য dist ফোল্ডার তৈরি)
+      # ৫. ডিপেনডেন্সি ইনস্টলেশন
+      - name: Install Project Dependencies
+        run: npm install --force
+
+      # ৬. ফ্রন্টএন্ড প্রজেক্ট বিল্ড
       - name: Build Web Frontend
-        run: npx vite build
+        run: npm run build || npx vite build
 
-      # ৬. ক্যাপাসিটর অ্যান্ড্রয়েড প্ল্যাটফর্ম কনফিগার
+      # ৭. ক্যাপাসিটর দিয়ে অ্যান্ড্রয়েড সেটআপ
       - name: Setup Capacitor Android
         run: |
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest --save-dev
-          cat << 'EOF' > capacitor.config.json
-          {
-            "appId": "com.teaadda.game",
-            "appName": "TEA ADDA",
-            "webDir": "dist"
-          }
-          EOF
-          npx cap add android
+          npm install @capacitor/core @capacitor/cli @capacitor/android --force
+          npx cap init "TEA ADDA" "com.teaadda.game" --web-dir dist
+          npx cap add android || true
           npx cap sync android
 
-      # ৭. অ্যান্ড্রয়েড APK কম্পাইল
-      - name: Build Debug APK with Gradle
+      # ৮. গ্রেডেল দিয়ে APK তৈরি করা
+      - name: Build APK with Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
-      # ৮. ডাউনলোড করার জন্য APK Artifact তৈরি
-      - name: Upload APK
+      # ৯. তৈরি হওয়া APK ফাইল আপলোড (ডাউনলোডের জন্য)
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TEA-ADDA-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: TEA-ADDA-APK-File
+          path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 14
