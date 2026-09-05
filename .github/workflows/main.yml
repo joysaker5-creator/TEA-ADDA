@@ -1,0 +1,62 @@
+name: Build Android APK (Joy Ludo)
+
+# কোড পুশ হলে বা গিটহাব ওয়েবসাইট থেকে মোবাইলে ম্যানুয়ালি রান করানোর ট্রিগার
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # মোবাইল থেকে Run workflow বাটনে ক্লিক করে চালানোর সুবিধা
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # ১. রিপোজিটরি ক্লোন
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ২. Node.js সেটআপ
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # ৩. ডিপেনডেন্সি ইনস্টলেশন
+      - name: Install Dependencies
+        run: npm ci
+
+      # ৪. ওয়েব প্রজেক্ট বিল্ড (dist ফোল্ডার তৈরি)
+      - name: Build Web Application
+        run: npm run build
+
+      # ৫. জাভা ও অ্যান্ড্রয়েড এসডিকে সেটআপ
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # ৬. অ্যান্ড্রয়েড প্রজেক্ট ইনিশিয়ালাইজ ও ক্যাপাসিটর সিঙ্ক
+      - name: Setup Capacitor & Android Platform
+        run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "Joy Ludo" "com.joyludo.game" --web-dir dist
+          npx cap add android
+          npx cap sync android
+
+      # ৭. গ্রেডেল (Gradle) দিয়ে APK কম্পাইল করা
+      - name: Build Debug Android APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      # ৮. তৈরি হওয়া .apk ফাইলটি GitHub Artifacts এ আপলোড (মোবাইল থেকে ডাউনলোডের জন্য)
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Joy-Ludo-Release-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
