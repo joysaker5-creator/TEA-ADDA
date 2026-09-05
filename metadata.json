@@ -1,0 +1,7 @@
+{
+  "name": "TEA ADDA",
+  "description": "TEA ADDA - Global Ludo Gaming, 10-Player Live Audio Voice Rooms, Video Reels, Tournaments, and Interactive Community.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
